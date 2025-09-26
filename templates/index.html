@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Sentiment Analysis – HuggingFace ML + Features</title>
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    /* subtle highlights for sentence polarity */
+    .sent-pos { background: rgba(25,135,84,.08); }   /* green-100 */
+    .sent-neg { background: rgba(220,53,69,.08); }   /* red-100  */
+    .mono     { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
+    textarea  { min-height: 160px; }
+  </style>
+</head>
+<body class="bg-light">
+  <!-- Header -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+    <div class="container">
+      <a class="navbar-brand" href="#">Sentiment Analysis</a>
+      <span class="navbar-text small">HuggingFace + Custom Features</span>
+    </div>
+  </nav>
+
+  <div class="container mb-5">
+    <!-- Input card -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-body">
+        <h5 class="card-title mb-3">Analyze a Review</h5>
+        <form method="POST">
+          <div class="mb-3">
+            <textarea name="input_text" class="form-control" placeholder="Paste a movie review here…">{{ input_text }}</textarea>
+          </div>
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">Analyze Sentiment</button>
+            <a class="btn btn-outline-secondary" href="/">Clear</a>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    {% if cleaned_text %}
+    <!-- Summary row -->
+    <div class="row g-4">
+      <!-- Overall sentiment -->
+      <div class="col-lg-5">
+        <div class="card shadow-sm h-100">
+          <div class="card-body">
+            <h5 class="card-title mb-3">Overall Sentiment</h5>
+            {% set color = 'success' if overall_label == 'Positive' else ('danger' if overall_label == 'Negative' else 'warning') %}
+            <span class="badge bg-{{ color }} me-2">{{ overall_label }}</span>
+            <span class="text-muted">Score: {{ '%.3f'|format(result.compound_score) }}</span>
+
+            <!-- progress bar (0..1 mapped to 0..100) -->
+            <div class="progress mt-3" role="progressbar" aria-label="sentiment-score">
+              {% set pct = ((result.compound_score + 1) / 2 * 100) | round(0, 'floor') %}
+<div class="progress mt-3" role="progressbar" aria-label="sentiment-score">
+  <div class="progress-bar bg-{{ color }}" data-pct="{{ pct }}">{{ pct }}%</div>
+</div>
+
+              
+            </div>
+
+            <!-- Extremes -->
+            <div class="mt-4 small">
+              <div class="mb-2">
+                <div class="text-success fw-semibold">Most Positive Sentence</div>
+                <div class="sent-pos p-2 rounded mono">{{ result.most_pos_sentence }}</div>
+              </div>
+              <div>
+                <div class="text-danger fw-semibold">Most Negative Sentence</div>
+                <div class="sent-neg p-2 rounded mono">{{ result.most_neg_sentence }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cleaned text -->
+      <div class="col-lg-7">
+        <div class="card shadow-sm h-100">
+          <div class="card-body">
+            <h5 class="card-title mb-3">Cleaned Text</h5>
+            <div class="mono small" style="white-space:pre-wrap">{{ cleaned_text }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if result %}
+    <!-- Sentence table -->
+    <div class="card shadow-sm my-4">
+      <div class="card-body">
+        <h5 class="card-title mb-3">Sentence-level Sentiment</h5>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle">
+            <thead>
+              <tr>
+                <th style="width:70%">Sentence</th>
+                <th class="text-end">Score</th>
+                <th class="text-center">Label</th>
+              </tr>
+            </thead>
+            <tbody class="mono">
+              {% for sentence, score in result.sentence_scores %}
+              {% set row_class = 'sent-pos' if score > 0.1 else ('sent-neg' if score < -0.1 else '') %}
+              {% set lbl = 'Positive' if score > 0.1 else ('Negative' if score < -0.1 else 'Neutral') %}
+              {% set pill = 'success' if lbl=='Positive' else ('danger' if lbl=='Negative' else 'secondary') %}
+              <tr class="{{ row_class }}">
+                <td class="small">{{ sentence }}</td>
+                <td class="text-end">{{ '%.3f'|format(score) }}</td>
+                <td class="text-center"><span class="badge rounded-pill bg-{{ pill }}">{{ lbl }}</span></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Advanced details (collapsible) -->
+    <!-- <div class="accordion" id="adv">
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="winHead">
+          <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#winBody">
+            Sliding Window Sentiment (3-sentence windows per paragraph)
+          </button>
+        </h2>
+        <div id="winBody" class="accordion-collapse collapse show" data-bs-parent="#adv">
+          <div class="accordion-body">
+            {% if result.paragraph_windows %}
+            <ul class="mb-0">
+              {% for window in result.paragraph_windows %}
+                <li class="small">
+                  {% if window %}
+                    <strong>Max:</strong> sentences {{ window[0][0]+1 }}–{{ window[0][1]+1 }}
+                    &nbsp;&nbsp;|&nbsp;&nbsp;
+                    <strong>Min:</strong> sentences {{ window[1][0]+1 }}–{{ window[1][1]+1 }}
+                  {% else %}
+                    Not enough sentences for sliding window
+                  {% endif %}
+                </li>
+              {% endfor %}
+            </ul>
+            {% endif %}
+          </div>
+        </div>
+      </div> -->
+
+      <div class="accordion-item">
+        <!-- <h2 class="accordion-header" id="kadHead">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#kadBody">
+            Arbitrary Length Segments (Kadane’s Algorithm)
+          </button>
+        </h2> -->
+        <div id="kadBody" class="accordion-collapse collapse" data-bs-parent="#adv">
+          <div class="accordion-body">
+            {% if result.paragraph_arbitrary %}
+            <ul class="mb-0">
+              {% for max_seg, min_seg in result.paragraph_arbitrary %}
+                <li class="small">
+                  <strong>Max:</strong>
+                  {% if max_seg %} sentences {{ max_seg[0]+1 }}–{{ max_seg[1]+1 }} {% else %} N/A {% endif %}
+                  &nbsp;&nbsp;|&nbsp;&nbsp;
+                  <strong>Min:</strong>
+                  {% if min_seg %} sentences {{ min_seg[0]+1 }}–{{ min_seg[1]+1 }} {% else %} N/A {% endif %}
+                </li>
+              {% endfor %}
+            </ul>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item">
+        <!-- <h2 class="accordion-header" id="wbHead">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#wbBody">
+            Word Break Segmentations (first sentence)
+          </button>
+        </h2> -->
+        <div id="wbBody" class="accordion-collapse collapse" data-bs-parent="#adv">
+          <div class="accordion-body">
+            {% if result.word_break_results %}
+              <ul class="mb-0 mono small">
+                {% for segment in result.word_break_results[:10] %}
+                  <li>{{ segment }}</li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              <p class="text-muted small mb-0">No valid segmentations found.</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

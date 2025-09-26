@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Sentiment Analysis with AFINN</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 700px; margin: 2em auto; padding: 1em;}
+        textarea { width: 100%; height: 150px; font-size: 1em; padding: 0.5em; }
+        button { margin-top: 10px; padding: 10px 20px; font-size: 1em; }
+        .result { margin-top: 2em; }
+        .sentence-score { margin-bottom: 0.5em; border-bottom: 1px solid #ccc; padding-bottom: 0.3em;}
+        .highlight { font-weight: bold; color: #006400; }
+        .negative { color: #b22222; }
+        .section-title { margin-top: 2em; font-size: 1.2em; text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+<h1>Sentiment Analysis with AFINN</h1>
+
+<form method="post">
+    <label for="input_text">Enter your text here:</label><br />
+    <textarea id="input_text" name="input_text" required>{{ input_text }}</textarea><br />
+    <button type="submit">Analyze Sentiment</button>
+</form>
+
+{% if analysis %}
+<div class="result">
+
+    <div class="section-title">Sentence Scores:</div>
+    {% for sent, score in analysis.sentence_scores %}
+        <div class="sentence-score">
+            <span>{{ score }} : </span>
+            <span>{{ sent }}</span>
+        </div>
+    {% endfor %}
+
+    <div class="section-title">Most Positive Sentence:</div>
+    <p class="highlight">{{ analysis.most_positive_sentence[0] }} <br/> (Score: {{ analysis.most_positive_sentence[1] }})</p>
+
+    <div class="section-title">Most Negative Sentence:</div>
+    <p class="negative">{{ analysis.most_negative_sentence[0] }} <br/> (Score: {{ analysis.most_negative_sentence[1] }})</p>
+
+    <div class="section-title">Most Positive Paragraph Segment (3 sentences):</div>
+    <p class="highlight">{{ analysis.most_positive_paragraph[0]|join(' ') }}<br/> (Score: {{ analysis.most_positive_paragraph[1] }})</p>
+
+    <div class="section-title">Most Negative Paragraph Segment (3 sentences):</div>
+    <p class="negative">{{ analysis.most_negative_paragraph[0]|join(' ') }}<br/> (Score: {{ analysis.most_negative_paragraph[1] }})</p>
+
+</div>
+{% endif %}
+
+</body>
+</html>
