@@ -15,3 +15,4 @@ def index():
 if __name__ == "__main__":
     # Run: python app.py  (then open http://127.0.0.1:5000)
     app.run(debug=True)
+ # Run: python app.py  (then open http://127.0.0.1:5000)
